@@ -1,0 +1,1189 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AstroGuard AI — Stage 3: Spacecraft Health & Telemetry Monitoring Platform</title>
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: #0B1120;
+      color: #F8FAFC;
+    }
+    .mono {
+      font-family: 'JetBrains Mono', monospace;
+    }
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #0F172A;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #334155;
+      border-radius: 3px;
+    }
+  </style>
+</head>
+<body class="min-h-screen bg-[#0B1120] text-slate-100 antialiased selection:bg-sky-500 selection:text-white">
+
+  <!-- Top Mission Control Header -->
+  <header class="sticky top-0 z-30 border-b border-slate-800 bg-[#0F172A]/95 backdrop-blur">
+    <div class="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-3 px-4 py-3">
+      <div class="flex items-center gap-3">
+        <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-sky-500 to-indigo-600 shadow-lg shadow-sky-500/20">
+          <svg class="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
+          </svg>
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <h1 class="text-base font-bold tracking-tight text-white sm:text-lg">AstroGuard AI</h1>
+            <span class="rounded-full border border-emerald-500/40 bg-emerald-500/10 px-2.5 py-0.5 text-xs font-semibold text-emerald-400">
+              STAGE 3: LIVE TELEMETRY PLATFORM
+            </span>
+          </div>
+          <p class="text-xs text-slate-400">
+            NASA JPL Telemanom LSTM + Non-Parametric Dynamic Thresholding • SMAP Satellite &amp; MSL Curiosity Rover
+          </p>
+        </div>
+      </div>
+
+      <!-- Navigation Tabs -->
+      <nav class="flex flex-wrap items-center gap-1.5" aria-label="Platform Views">
+        <button id="tabBtnStream" type="button" class="rounded-lg bg-sky-500/20 border border-sky-500/50 px-3 py-1.5 text-xs font-semibold text-sky-300 transition">
+          Live Telemetry &amp; XAI (Phases 12–14)
+        </button>
+        <button id="tabBtnIncidents" type="button" class="rounded-lg border border-slate-700 bg-slate-800/70 px-3 py-1.5 text-xs font-medium text-slate-300 hover:bg-slate-800 transition">
+          Alert Manager &amp; F0.5 Tuner (Phase 15)
+        </button>
+        <button id="tabBtnApi" type="button" class="rounded-lg border border-slate-700 bg-slate-800/70 px-3 py-1.5 text-xs font-medium text-slate-300 hover:bg-slate-800 transition">
+          FastAPI &amp; AI Assistant (Phases 11 &amp; 19)
+        </button>
+      </nav>
+    </div>
+  </header>
+
+  <main class="mx-auto max-w-7xl px-4 py-4 space-y-4">
+
+    <!-- Top KPI Strip -->
+    <section class="grid grid-cols-2 gap-3 sm:grid-cols-4">
+      <div class="rounded-xl border border-slate-800 bg-slate-900/90 p-3.5">
+        <div class="flex items-center justify-between text-xs text-slate-400">
+          <span>Active Channel Status</span>
+          <span id="kpiSpacecraftBadge" class="mono rounded bg-slate-800 px-1.5 py-0.5 text-[11px] text-sky-400">SMAP • P-1</span>
+        </div>
+        <div id="kpiHealthState" class="mt-1.5 text-base font-bold text-emerald-400 sm:text-lg">NOMINAL ORBITAL</div>
+        <div id="kpiMissionClock" class="mono mt-0.5 text-xs text-slate-400">Timestep t = 2110 • 0.04 ms/win</div>
+      </div>
+
+      <div class="rounded-xl border border-slate-800 bg-slate-900/90 p-3.5">
+        <div class="flex items-center justify-between text-xs text-slate-400">
+          <span>EWMA Error vs. Dynamic ε*</span>
+          <span class="mono text-[11px] text-purple-400">Span = 40</span>
+        </div>
+        <div class="mt-1.5 flex items-baseline gap-2">
+          <span id="kpiEwmaVal" class="mono text-lg font-bold text-white">0.072</span>
+          <span id="kpiEpsilonVal" class="mono text-xs text-emerald-400">/ ε* = 0.340</span>
+        </div>
+        <div id="kpiExceedanceText" class="mt-0.5 text-xs text-slate-400">Ratio: 0.21x (1.4σ above nominal)</div>
+      </div>
+
+      <div class="rounded-xl border border-slate-800 bg-slate-900/90 p-3.5">
+        <div class="flex items-center justify-between text-xs text-slate-400">
+          <span>NASA JPL Fleet F0.5-Score</span>
+          <span class="mono text-[11px] text-emerald-400">β = 0.5 (2x Prec)</span>
+        </div>
+        <div class="mt-1.5 flex items-baseline gap-2">
+          <span id="kpiF05Val" class="mono text-lg font-bold text-emerald-400">0.9091</span>
+          <span id="kpiF1Val" class="mono text-xs text-slate-400">F1 = 0.8889</span>
+        </div>
+        <div id="kpiTpFpText" class="mt-0.5 text-xs text-slate-400">Precision: 92.3% (TP=12, FP=1)</div>
+      </div>
+
+      <div class="rounded-xl border border-slate-800 bg-slate-900/90 p-3.5">
+        <div class="flex items-center justify-between text-xs text-slate-400">
+          <span>Equipment Degradation Index</span>
+          <span class="mono text-[11px] text-amber-400">Phase 16 R²</span>
+        </div>
+        <div id="kpiDegradationStatus" class="mt-1.5 text-base font-bold text-slate-200 sm:text-lg">STABLE (R²=0.04)</div>
+        <div id="kpiDegradationSub" class="mt-0.5 text-xs text-slate-400">Pre-threshold drift indicator</div>
+      </div>
+    </section>
+
+    <!-- VIEW 1: LIVE TELEMETRY STREAMING, OSCILLOSCOPES & EXPLAINABLE AI -->
+    <div id="viewStream" class="space-y-4">
+
+      <!-- Channel Selector & Streaming Toolbar -->
+      <div class="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-800 bg-slate-900/90 p-3">
+        <!-- 8 Spacecraft Channels -->
+        <div class="flex flex-wrap items-center gap-1.5" id="channelButtonsContainer">
+          <!-- Populated dynamically by JS -->
+        </div>
+
+        <!-- Stream Controls & Fault Injection -->
+        <div class="flex flex-wrap items-center gap-2">
+          <button id="btnPlayPause" type="button" class="flex items-center gap-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 px-3 py-1.5 text-xs font-semibold text-white transition">
+            <span id="playPauseIcon">⏸</span>
+            <span id="playPauseText">Pause Stream</span>
+          </button>
+          <button id="btnStep" type="button" class="rounded-lg border border-slate-700 bg-slate-800 hover:bg-slate-700 px-2.5 py-1.5 text-xs font-medium text-slate-200 transition">
+            +1 Step
+          </button>
+          <select id="selectSpeed" aria-label="Streaming Speed" class="rounded-lg border border-slate-700 bg-slate-800 px-2.5 py-1.5 text-xs text-slate-200">
+            <option value="120">Speed: 1x (Nominal)</option>
+            <option value="55" selected>Speed: 2x (Fast)</option>
+            <option value="22">Speed: 5x (Turbo)</option>
+          </select>
+
+          <div class="h-4 w-px bg-slate-700 mx-0.5"></div>
+
+          <button id="btnInjectPoint" type="button" class="rounded-lg border border-rose-500/50 bg-rose-500/15 hover:bg-rose-500/25 px-2.5 py-1.5 text-xs font-semibold text-rose-300 transition">
+            ⚡ Inject Point Spike
+          </button>
+          <button id="btnInjectContextual" type="button" class="rounded-lg border border-sky-500/50 bg-sky-500/15 hover:bg-sky-500/25 px-2.5 py-1.5 text-xs font-semibold text-sky-300 transition">
+            〰️ Inject Contextual Harmonic
+          </button>
+          <button id="btnInjectDegradation" type="button" class="rounded-lg border border-amber-500/50 bg-amber-500/15 hover:bg-amber-500/25 px-2.5 py-1.5 text-xs font-semibold text-amber-300 transition">
+            📈 Inject Degradation Drift
+          </button>
+          <button id="btnResetStream" type="button" class="rounded-lg border border-slate-700 bg-slate-800 hover:bg-slate-700 px-2.5 py-1.5 text-xs text-slate-300 transition">
+            Reset
+          </button>
+        </div>
+      </div>
+
+      <!-- Main Grid: Dual Oscilloscopes (Left 8 cols) + Explainable AI 5-Question Card (Right 4 cols) -->
+      <div class="grid grid-cols-1 gap-4 lg:grid-cols-12">
+
+        <!-- Dual Real-Time Oscilloscopes -->
+        <div class="space-y-3 lg:col-span-8">
+          <!-- Panel A: Telemetry Stream y_t vs 10-Step LSTM Forecast y_hat -->
+          <div class="rounded-xl border border-slate-800 bg-slate-900/90 p-3.5">
+            <div class="mb-2 flex flex-wrap items-center justify-between gap-2">
+              <div>
+                <h2 class="text-xs font-bold uppercase tracking-wider text-slate-300">
+                  Phase 12 &amp; 13A: Live Spacecraft Telemetry (<span class="mono text-sky-400">y_t</span>) vs. 10-Step LSTM Forecast (<span class="mono text-emerald-400">ŷ_t</span>)
+                </h2>
+                <p class="text-[11px] text-slate-400">Bottom ticks indicate active binary spacecraft command pulses across subsystem modules</p>
+              </div>
+              <div class="flex items-center gap-3 text-[11px]">
+                <span class="flex items-center gap-1 text-slate-300"><span class="inline-block h-2 w-2 rounded-full bg-slate-400"></span>Actual y_t</span>
+                <span class="flex items-center gap-1 text-sky-400"><span class="inline-block h-2 w-2 rounded-full bg-sky-400"></span>LSTM Forecast ŷ_t</span>
+                <span class="flex items-center gap-1 text-rose-400"><span class="inline-block h-2 w-2 rounded-full bg-rose-500"></span>Anomaly Window</span>
+              </div>
+            </div>
+            <div class="relative h-52 w-full">
+              <canvas id="canvasTelemetry" class="h-full w-full rounded-lg bg-[#0B1120]"></canvas>
+            </div>
+          </div>
+
+          <!-- Panel B: EWMA Smoothed Error e_s vs Adaptive Dynamic Threshold epsilon* -->
+          <div class="rounded-xl border border-slate-800 bg-slate-900/90 p-3.5">
+            <div class="mb-2 flex flex-wrap items-center justify-between gap-2">
+              <div>
+                <h2 class="text-xs font-bold uppercase tracking-wider text-slate-300">
+                  Phase 13B: EWMA Smoothed Residual (<span class="mono text-purple-400">e_s</span>) &amp; Unsupervised Dynamic Threshold (<span class="mono text-emerald-400">ε*</span>)
+                </h2>
+                <p class="text-[11px] text-slate-400">Suppresses single-step sensor spikes while catching contextual, point, and degradation drift</p>
+              </div>
+              <div class="flex items-center gap-3 text-[11px]">
+                <span class="flex items-center gap-1 text-purple-400"><span class="inline-block h-2 w-2 rounded-full bg-purple-400"></span>EWMA Error e_s</span>
+                <span class="flex items-center gap-1 text-emerald-400"><span class="inline-block h-2 w-2 rounded-full bg-emerald-400"></span>Dynamic ε*</span>
+                <span class="flex items-center gap-1 text-amber-400"><span class="inline-block h-2 w-2 rounded-full bg-amber-400"></span>Degradation Trend</span>
+              </div>
+            </div>
+            <div class="relative h-48 w-full">
+              <canvas id="canvasError" class="h-full w-full rounded-lg bg-[#0B1120]"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right Column: Phase 9 Explainable AI (XAI) 5-Question Inspector -->
+        <div class="rounded-xl border border-slate-800 bg-slate-900/90 p-4 lg:col-span-4 flex flex-col justify-between">
+          <div class="space-y-3">
+            <div class="flex items-center justify-between border-b border-slate-800 pb-2.5">
+              <div>
+                <span class="text-[11px] font-semibold uppercase tracking-wider text-sky-400">Phase 9 • Explainable AI</span>
+                <h2 class="text-sm font-bold text-white">5-Question Root-Cause Inspector</h2>
+              </div>
+              <span id="xaiCategoryBadge" class="rounded-md bg-sky-500/20 border border-sky-500/40 px-2 py-0.5 text-[11px] font-semibold text-sky-300">
+                CONTEXTUAL
+              </span>
+            </div>
+
+            <!-- Question 1 -->
+            <div class="rounded-lg border border-slate-800/90 bg-[#0B1120]/80 p-2.5">
+              <div class="text-[11px] font-semibold text-slate-400">1. What changed in the subsystem?</div>
+              <p id="xaiQ1" class="mt-1 text-xs text-slate-200 leading-relaxed">
+                Contextual harmonic divergence in P-1: variance expanded 1.69x (zero-crossing rate 0.25/step) violating expected orbital phase.
+              </p>
+            </div>
+
+            <!-- Question 2 -->
+            <div class="rounded-lg border border-slate-800/90 bg-[#0B1120]/80 p-2.5">
+              <div class="text-[11px] font-semibold text-slate-400">2. When did it start &amp; peak?</div>
+              <div id="xaiQ2" class="mono mt-1 text-xs text-emerald-400">
+                Onset: t=2095 | Peak: t=2221 | Recovery: t=2349 (Δt = 254 steps)
+              </div>
+            </div>
+
+            <!-- Question 3 -->
+            <div class="rounded-lg border border-slate-800/90 bg-[#0B1120]/80 p-2.5">
+              <div class="text-[11px] font-semibold text-slate-400">3. Which measurements contributed? (Counterfactual Attribution)</div>
+              <div id="xaiQ3Bars" class="mt-2 space-y-1.5">
+                <!-- Populated by JS -->
+              </div>
+            </div>
+
+            <!-- Question 4 -->
+            <div class="rounded-lg border border-slate-800/90 bg-[#0B1120]/80 p-2.5">
+              <div class="text-[11px] font-semibold text-slate-400">4. How unusual was the behavior?</div>
+              <div id="xaiQ4" class="mono mt-1 text-xs text-amber-300">
+                Peak EWMA = 0.448 (1.32x above ε*=0.340 • 7.1σ above nominal)
+              </div>
+            </div>
+
+            <!-- Question 5 -->
+            <div class="rounded-lg border border-slate-800/90 bg-[#0B1120]/80 p-2.5">
+              <div class="text-[11px] font-semibold text-slate-400">5. What should the engineer investigate?</div>
+              <ul id="xaiQ5List" class="mt-1 list-disc pl-4 text-xs text-slate-300 space-y-1">
+                <!-- Populated by JS -->
+              </ul>
+            </div>
+          </div>
+
+          <div class="mt-3 border-t border-slate-800 pt-2.5 flex items-center justify-between text-[11px] text-slate-400">
+            <span>Cross-Subsystem Coupling (Phase 18):</span>
+            <span id="xaiCouplingBadge" class="mono font-semibold text-sky-400">P-1 ↔ D-1 (|r|=0.76)</span>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- VIEW 2: PHASE 15 ALERT MANAGEMENT SYSTEM & PHASE 10 F0.5 PRUNING TUNER -->
+    <div id="viewIncidents" class="hidden space-y-4">
+      <div class="grid grid-cols-1 gap-4 lg:grid-cols-12">
+
+        <!-- Left 5 Cols: Interactive Phase 10 F_0.5 Pruning Optimizer -->
+        <div class="rounded-xl border border-slate-800 bg-slate-900/90 p-4 lg:col-span-5 space-y-4">
+          <div>
+            <span class="text-[11px] font-semibold uppercase tracking-wider text-emerald-400">Phase 10 • False-Positive Optimizer</span>
+            <h2 class="text-base font-bold text-white">Interactive NASA JPL F0.5 Threshold Tuner</h2>
+            <p class="mt-1 text-xs text-slate-400">
+              Adjust minimum peak-drop pruning (<span class="mono text-sky-300">p_min</span>) to see how NASA's precision-weighted <span class="mono text-emerald-400">F0.5</span> responds versus balanced <span class="mono text-purple-400">F1</span>.
+            </p>
+          </div>
+
+          <div class="rounded-lg border border-slate-800 bg-[#0B1120] p-3.5 space-y-3">
+            <div class="flex items-center justify-between">
+              <label for="sliderPmin" class="text-xs font-semibold text-slate-200">Minimum Peak Drop (<span class="mono">p_min</span>):</label>
+              <span id="sliderPminLabel" class="mono rounded bg-emerald-500/20 px-2 py-0.5 text-xs font-bold text-emerald-400">0.17 (Optimal F0.5)</span>
+            </div>
+            <input id="sliderPmin" type="range" min="0" max="5" step="1" value="3" class="w-full accent-emerald-500 cursor-pointer" />
+            <div class="flex justify-between mono text-[10px] text-slate-400">
+              <span>0.05</span>
+              <span>0.09</span>
+              <span>0.13 (KDD Default)</span>
+              <span>0.17 (Max F0.5)</span>
+              <span>0.21</span>
+              <span>0.25</span>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 gap-2.5">
+            <div class="rounded-lg border border-slate-800 bg-[#0B1120] p-3">
+              <div class="text-[11px] text-slate-400">NASA JPL F0.5 Score</div>
+              <div id="tunerF05" class="mono mt-1 text-xl font-bold text-emerald-400">0.9091</div>
+            </div>
+            <div class="rounded-lg border border-slate-800 bg-[#0B1120] p-3">
+              <div class="text-[11px] text-slate-400">Balanced F1 Score</div>
+              <div id="tunerF1" class="mono mt-1 text-xl font-bold text-purple-400">0.8889</div>
+            </div>
+            <div class="rounded-lg border border-slate-800 bg-[#0B1120] p-3">
+              <div class="text-[11px] text-slate-400">Fleet Precision / Recall</div>
+              <div id="tunerPrecRec" class="mono mt-1 text-sm font-semibold text-sky-400">92.3% / 85.7%</div>
+            </div>
+            <div class="rounded-lg border border-slate-800 bg-[#0B1120] p-3">
+              <div class="text-[11px] text-slate-400">True Pos / False Pos</div>
+              <div id="tunerTpFp" class="mono mt-1 text-sm font-semibold text-amber-300">TP = 12 | FP = 1</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right 7 Cols: Phase 15 Incident History & Alert Management Table -->
+        <div class="rounded-xl border border-slate-800 bg-slate-900/90 p-4 lg:col-span-7 space-y-3">
+          <div class="flex flex-wrap items-center justify-between gap-2">
+            <div>
+              <span class="text-[11px] font-semibold uppercase tracking-wider text-rose-400">Phase 15 • Alert Management System</span>
+              <h2 class="text-base font-bold text-white">Spacecraft Incident Queue &amp; Severity Log</h2>
+            </div>
+            <div class="flex items-center gap-1.5">
+              <button id="filterAll" type="button" class="rounded-md bg-sky-500/20 border border-sky-500/40 px-2.5 py-1 text-xs font-semibold text-sky-300">All</button>
+              <button id="filterCritical" type="button" class="rounded-md border border-slate-700 bg-slate-800 px-2.5 py-1 text-xs text-slate-300">Critical</button>
+              <button id="filterDegradation" type="button" class="rounded-md border border-slate-700 bg-slate-800 px-2.5 py-1 text-xs text-slate-300">Degradation</button>
+            </div>
+          </div>
+
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs">
+              <thead>
+                <tr class="border-b border-slate-800 text-[11px] uppercase text-slate-400">
+                  <th class="py-2 pr-2">Channel</th>
+                  <th class="py-2 px-2">Window [t]</th>
+                  <th class="py-2 px-2">Pattern (Phase 6)</th>
+                  <th class="py-2 px-2">Severity</th>
+                  <th class="py-2 px-2">Status</th>
+                  <th class="py-2 pl-2 text-right">Action</th>
+                </tr>
+              </thead>
+              <tbody id="incidentTableBody" class="divide-y divide-slate-800/70">
+                <!-- Populated by JS -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- VIEW 3: PHASE 11 FASTAPI SIMULATOR & PHASE 19 ANOMALY INVESTIGATION ASSISTANT -->
+    <div id="viewApi" class="hidden space-y-4">
+      <div class="grid grid-cols-1 gap-4 lg:grid-cols-12">
+
+        <!-- Left 6 Cols: Phase 19 AI Anomaly Investigation Assistant -->
+        <div class="rounded-xl border border-slate-800 bg-slate-900/90 p-4 lg:col-span-6 flex flex-col justify-between space-y-3">
+          <div class="space-y-3">
+            <div>
+              <span class="text-[11px] font-semibold uppercase tracking-wider text-sky-400">Phase 19 • Anomaly Investigation Assistant</span>
+              <h2 class="text-base font-bold text-white">Evidence-Backed Mission Control Q&amp;A</h2>
+              <p class="text-xs text-slate-400">Queries historical telemetry, Stage 2 XAI attributions, Phase 16 degradation trends, and Phase 18 coupling.</p>
+            </div>
+
+            <!-- Preset Question Pills -->
+            <div class="flex flex-wrap gap-1.5">
+              <button type="button" data-query="Why was spacecraft subsystem P-1 flagged as abnormal?" class="presetQueryBtn rounded-lg border border-sky-500/40 bg-sky-500/10 hover:bg-sky-500/20 px-2.5 py-1 text-xs text-sky-300 transition">
+                "Why was P-1 flagged as abnormal?"
+              </button>
+              <button type="button" data-query="Are there any early equipment degradation indicators before failure?" class="presetQueryBtn rounded-lg border border-amber-500/40 bg-amber-500/10 hover:bg-amber-500/20 px-2.5 py-1 text-xs text-amber-300 transition">
+                "Any early equipment degradation indicators?"
+              </button>
+              <button type="button" data-query="Which telemetry channels have the strongest multivariate dependency?" class="presetQueryBtn rounded-lg border border-emerald-500/40 bg-emerald-500/10 hover:bg-emerald-500/20 px-2.5 py-1 text-xs text-emerald-300 transition">
+                "Which channels are strongly coupled?"
+              </button>
+            </div>
+
+            <!-- Conversation Output Box -->
+            <div id="assistantChatBox" class="h-64 overflow-y-auto rounded-lg border border-slate-800 bg-[#0B1120] p-3 space-y-3 text-xs">
+              <!-- Populated by JS -->
+            </div>
+          </div>
+
+          <form id="assistantForm" class="flex gap-2 pt-2">
+            <input id="assistantInput" type="text" placeholder="Ask about P-1, M-1, degradation drift, F0.5, or transfer learning..." class="flex-1 rounded-lg border border-slate-700 bg-slate-800 px-3 py-2 text-xs text-white placeholder-slate-400 focus:border-sky-500 focus:outline-none" />
+            <button type="submit" class="rounded-lg bg-sky-600 hover:bg-sky-500 px-4 py-2 text-xs font-semibold text-white transition">
+              Ask AI
+            </button>
+          </form>
+        </div>
+
+        <!-- Right 6 Cols: Phase 11 FastAPI Real-Time Inference Tester -->
+        <div class="rounded-xl border border-slate-800 bg-slate-900/90 p-4 lg:col-span-6 space-y-3">
+          <div class="flex items-center justify-between">
+            <div>
+              <span class="text-[11px] font-semibold uppercase tracking-wider text-emerald-400">Phase 11 • FastAPI Microservice</span>
+              <h2 class="text-base font-bold text-white">Live Endpoint Tester (<span class="mono text-xs text-emerald-400">POST /v1/telemetry/detect</span>)</h2>
+            </div>
+            <div class="flex gap-2">
+              <button id="btnTestNominalApi" type="button" class="rounded-lg border border-sky-500/40 bg-sky-500/15 hover:bg-sky-500/25 px-2.5 py-1 text-xs font-semibold text-sky-300 transition">
+                Send Nominal Window
+              </button>
+              <button id="btnTestAnomalyApi" type="button" class="rounded-lg border border-rose-500/40 bg-rose-500/15 hover:bg-rose-500/25 px-2.5 py-1 text-xs font-semibold text-rose-300 transition">
+                Send Anomalous Window
+              </button>
+            </div>
+          </div>
+
+          <pre id="apiJsonOutput" class="mono h-80 overflow-y-auto rounded-lg border border-slate-800 bg-[#0B1120] p-3 text-[11px] text-emerald-300 leading-relaxed"></pre>
+        </div>
+
+      </div>
+    </div>
+
+  </main>
+
+  <script>
+    // =========================================================================
+    // 1. SPACECRAFT FLEET DATASET & STAGE 2/4 INTELLIGENCE STATE
+    // =========================================================================
+    const CHANNELS = {
+      "P-1": {
+        id: "P-1", spacecraft: "SMAP", subsystem: "Power", epsilon: 0.340,
+        coupling: "P-1 ↔ D-1 (|r|=0.76, lag=0)",
+        anomalies: [
+          { start: 60, end: 110, type: "CONTEXTUAL", gt: "contextual" },
+          { start: 165, end: 205, type: "POINT", gt: "point" }
+        ],
+        xai: {
+          category: "CONTEXTUAL HARMONIC",
+          q1: "Contextual harmonic/oscillatory divergence in P-1: variance expanded 1.69x (zero-crossing rate 0.25/step) violating expected orbital phase.",
+          q2: "Onset: t=2095 | Peak: t=2221 | Recovery: t=2349 (Δt = 254 steps)",
+          q3: [
+            { name: "P-1_Telemetry_Stream (col 0)", pct: 50.4 },
+            { name: "Command_Module_C1 (col 1)", pct: 21.3 },
+            { name: "Command_Module_C16 (col 16)", pct: 17.1 },
+            { name: "Command_Module_C3 (col 3)", pct: 11.1 }
+          ],
+          q4: "Peak EWMA = 0.4483 (1.32x above ε*=0.3400 • 7.1σ above nominal)",
+          q5: [
+            "Audit control-loop feedback gains and harmonic damping on P-1 between t=2095 and t=2349.",
+            "Verify execution timing of Command_Module_C1 (col 1) relative to orbital eclipse transition.",
+            "Check reaction-wheel or thermal-control duty cycle for resonant coupling."
+          ]
+        }
+      },
+      "T-1": {
+        id: "T-1", spacecraft: "SMAP", subsystem: "Thermal", epsilon: 0.325,
+        coupling: "T-1 ↔ D-1 (|r|=0.81, lag=0)",
+        anomalies: [{ start: 80, end: 125, type: "CONTEXTUAL", gt: "contextual" }],
+        xai: {
+          category: "CONTEXTUAL THERMAL",
+          q1: "Thermal control loop oscillation in T-1: amplitude swung ±0.58 around eclipse boundary.",
+          q2: "Onset: t=1806 | Peak: t=1950 | Recovery: t=2128 (Δt = 322 steps)",
+          q3: [
+            { name: "T-1_Telemetry_Stream (col 0)", pct: 54.8 },
+            { name: "Heater_Relay_Cmd_C4 (col 4)", pct: 24.2 },
+            { name: "Louver_Actuator_C9 (col 9)", pct: 12.5 },
+            { name: "Bus_Voltage_Cmd_C2 (col 2)", pct: 8.5 }
+          ],
+          q4: "Peak EWMA = 0.4810 (1.48x above ε*=0.3250 • 7.6σ above nominal)",
+          q5: [
+            "Inspect heater duty-cycle pulse width modulation on T-1 during solar eclipse exit.",
+            "Verify Louver_Actuator_C9 command acknowledgment timestamps."
+          ]
+        }
+      },
+      "A-1": {
+        id: "A-1", spacecraft: "SMAP", subsystem: "Attitude", epsilon: 0.355,
+        coupling: "A-1 ↔ D-1 (|r|=0.80, lag=0)",
+        anomalies: [{ start: 110, end: 150, type: "POINT", gt: "point" }],
+        xai: {
+          category: "POINT EXCURSION",
+          q1: "Abrupt point step excursion in A-1 attitude rate sensor (crest factor 3.24).",
+          q2: "Onset: t=2970 | Peak: t=3105 | Recovery: t=3263 (Δt = 293 steps)",
+          q3: [
+            { name: "A-1_Telemetry_Stream (col 0)", pct: 64.0 },
+            { name: "Reaction_Wheel_Cmd_C2 (col 2)", pct: 18.5 },
+            { name: "Star_Tracker_Flag_C7 (col 7)", pct: 10.5 },
+            { name: "Thruster_Valve_C11 (col 11)", pct: 7.0 }
+          ],
+          q4: "Peak EWMA = 0.4920 (1.39x above ε*=0.3550 • 6.8σ above nominal)",
+          q5: [
+            "Inspect Star_Tracker_Flag_C7 for transient blinding or Single Event Upset (SEU).",
+            "Verify momentum dump command sequence on Reaction_Wheel_Cmd_C2."
+          ]
+        }
+      },
+      "M-1": {
+        id: "M-1", spacecraft: "MSL Curiosity", subsystem: "Mobility", epsilon: 0.428,
+        coupling: "M-1 ↔ D-1 (|r|=0.79, lag=0)",
+        anomalies: [{ start: 95, end: 140, type: "POINT", gt: "point" }],
+        xai: {
+          category: "POINT CURRENT SPIKE",
+          q1: "Abrupt point excursion in M-1 rover actuator current: mean shifted by -0.762 over rocky terrain.",
+          q2: "Onset: t=2263 | Peak: t=2349 | Recovery: t=2433 (Δt = 170 steps)",
+          q3: [
+            { name: "M-1_Telemetry_Stream (col 0)", pct: 70.2 },
+            { name: "Bogie_Drive_Cmd_C6 (col 6)", pct: 10.4 },
+            { name: "Steer_Actuator_C3 (col 3)", pct: 10.4 },
+            { name: "Hazard_Avoid_Cmd_C15 (col 15)", pct: 9.0 }
+          ],
+          q4: "Peak EWMA = 0.4753 (1.11x above ε*=0.4287 • 5.0σ above nominal)",
+          q5: [
+            "Inspect M-1 wheel actuator current draw at t=2263 for high-slip or rock obstruction.",
+            "Cross-check Bogie_Drive_Cmd_C6 torque limit telemetry."
+          ]
+        }
+      },
+      "R-1": {
+        id: "R-1", spacecraft: "SMAP", subsystem: "Radar", epsilon: 0.330,
+        coupling: "R-1 ↔ D-1 (|r|=0.85, lag=0)",
+        anomalies: [{ start: 70, end: 115, type: "CONTEXTUAL", gt: "contextual" }],
+        xai: {
+          category: "CONTEXTUAL RF DRIFT",
+          q1: "Contextual phase distortion in R-1 radar amplifier telemetry (crest factor 3.80).",
+          q2: "Onset: t=1543 | Peak: t=1710 | Recovery: t=1877 (Δt = 334 steps)",
+          q3: [
+            { name: "R-1_Telemetry_Stream (col 0)", pct: 58.1 },
+            { name: "HPA_Bias_Cmd_C5 (col 5)", pct: 22.4 },
+            { name: "Antenna_Spin_Cmd_C8 (col 8)", pct: 11.2 },
+            { name: "Pulse_Gate_C1 (col 1)", pct: 8.3 }
+          ],
+          q4: "Peak EWMA = 0.4620 (1.40x above ε*=0.3300 • 6.9σ above nominal)",
+          q5: [
+            "Check High-Power Amplifier (HPA) supply ripple on R-1.",
+            "Verify synchronization with D-1 downlink commutator."
+          ]
+        }
+      },
+      "F-1": {
+        id: "F-1", spacecraft: "MSL Curiosity", subsystem: "Flight", epsilon: 0.360,
+        coupling: "F-1 ↔ D-1 (|r|=0.76, lag=0)",
+        anomalies: [{ start: 130, end: 175, type: "POINT", gt: "point" }],
+        xai: {
+          category: "POINT BUS TRANSIENT",
+          q1: "Flight computer bus utilization spike in F-1 during autonomous navigation frame.",
+          q2: "Onset: t=1956 | Peak: t=2045 | Recovery: t=2156 (Δt = 200 steps)",
+          q3: [
+            { name: "F-1_Telemetry_Stream (col 0)", pct: 61.5 },
+            { name: "NavCam_DMA_Cmd_C4 (col 4)", pct: 19.0 },
+            { name: "IMU_Sync_Cmd_C10 (col 10)", pct: 11.5 },
+            { name: "Flash_Write_C2 (col 2)", pct: 8.0 }
+          ],
+          q4: "Peak EWMA = 0.4510 (1.25x above ε*=0.3600 • 6.2σ above nominal)",
+          q5: [
+            "Audit priority scheduling between NavCam_DMA_Cmd_C4 and IMU_Sync_Cmd_C10.",
+            "Confirm zero watchdog timer resets during [1956, 2156]."
+          ]
+        }
+      }
+    };
+
+    const PMIN_SWEEP = [
+      { p_min: 0.05, TP: 14, FP: 10, FN: 0, Precision: 0.5833, Recall: 1.0000, F1: 0.7368, F05: 0.6364 },
+      { p_min: 0.09, TP: 14, FP: 8,  FN: 0, Precision: 0.6364, Recall: 1.0000, F1: 0.7778, F05: 0.6863 },
+      { p_min: 0.13, TP: 13, FP: 2,  FN: 1, Precision: 0.8667, Recall: 0.9286, F1: 0.8966, F05: 0.8784 },
+      { p_min: 0.17, TP: 12, FP: 1,  FN: 2, Precision: 0.9231, Recall: 0.8571, F1: 0.8889, F05: 0.9091 },
+      { p_min: 0.21, TP: 12, FP: 1,  FN: 2, Precision: 0.9231, Recall: 0.8571, F1: 0.8889, F05: 0.9091 },
+      { p_min: 0.25, TP: 10, FP: 1,  FN: 4, Precision: 0.9091, Recall: 0.7143, F1: 0.8000, F05: 0.8621 }
+    ];
+
+    let INCIDENTS = [
+      { id: 1, chan: "P-1", spacecraft: "SMAP", window: "[2095, 2349]", pattern: "Contextual Harmonic", severity: "CRITICAL", status: "OPEN" },
+      { id: 2, chan: "P-1", spacecraft: "SMAP", window: "[3607, 3794]", pattern: "Point Excursion", severity: "CRITICAL", status: "OPEN" },
+      { id: 3, chan: "P-1", spacecraft: "SMAP", window: "[5450, 7050]", pattern: "Degradation Drift (R²=0.90)", severity: "DEGRADATION", status: "MONITORING" },
+      { id: 4, chan: "T-1", spacecraft: "SMAP", window: "[1806, 2128]", pattern: "Contextual Thermal", severity: "WARNING", status: "OPEN" },
+      { id: 5, chan: "A-1", spacecraft: "SMAP", window: "[2970, 3263]", pattern: "Point Step Spike", severity: "CRITICAL", status: "ACKNOWLEDGED" },
+      { id: 6, chan: "M-1", spacecraft: "MSL Curiosity", window: "[2263, 2433]", pattern: "Point Actuator Spike", severity: "CRITICAL", status: "OPEN" },
+      { id: 7, chan: "R-1", spacecraft: "SMAP", window: "[1543, 1877]", pattern: "Contextual RF Drift", severity: "WARNING", status: "OPEN" },
+      { id: 8, chan: "F-1", spacecraft: "MSL Curiosity", window: "[1956, 2156]", pattern: "Point Bus Transient", severity: "WARNING", status: "RESOLVED" }
+    ];
+
+    // Live Streaming State
+    let activeChanId = "P-1";
+    let isPlaying = true;
+    let streamIntervalMs = 55;
+    let timerHandle = null;
+    let missionStep = 2000;
+    const BUFFER_LEN = 180;
+    let telemetryBuffer = [];
+    let forecastBuffer = [];
+    let ewmaBuffer = [];
+    let cmdPulseBuffer = [];
+    let anomFlagBuffer = [];
+    let degDriftRemaining = 0;
+    let injectedMode = null;
+    let injectedStepsLeft = 0;
+    let activeIncidentFilter = "ALL";
+
+    // =========================================================================
+    // 2. STREAMING SIGNAL GENERATOR & ONLINE EWMA / NDT ENGINE
+    // =========================================================================
+    function initStreamBuffers() {
+      telemetryBuffer = [];
+      forecastBuffer = [];
+      ewmaBuffer = [];
+      cmdPulseBuffer = [];
+      anomFlagBuffer = [];
+      degDriftRemaining = 0;
+      injectedMode = null;
+      injectedStepsLeft = 0;
+      missionStep = 2000;
+
+      for (let i = 0; i < BUFFER_LEN; i++) {
+        stepSimulation(false);
+      }
+    }
+
+    function stepSimulation(shouldRender = true) {
+      missionStep += 1;
+      const spec = CHANNELS[activeChanId];
+      const t = missionStep;
+
+      // Command impulse simulation
+      const cmdPulse = (t % 29 === 0 || t % 47 === 0) ? 1 : 0;
+      const baseWave = 0.52 * Math.sin((2 * Math.PI * t) / 65.0) + 0.24 * Math.cos((2 * Math.PI * t) / 21.0);
+      const cmdEffect = cmdPulse ? 0.18 : 0.0;
+      const noise = (Math.sin(t * 12.9898) * 43758.5453 % 1) * 0.05 - 0.025;
+
+      let actualY = baseWave + cmdEffect + noise;
+      let predictedY = baseWave + cmdEffect * 0.88 + noise * 0.25;
+
+      // Check scheduled or user-injected anomalies
+      const cyclePos = t % 240;
+      let isScheduledAnom = false;
+      for (const a of spec.anomalies) {
+        if (cyclePos >= a.start && cyclePos <= a.end) {
+          isScheduledAnom = true;
+          if (a.type === "POINT") {
+            actualY = -0.82 + noise;
+          } else {
+            actualY += 0.62 * Math.sin((2 * Math.PI * t) / 6.0);
+          }
+          break;
+        }
+      }
+
+      if (injectedStepsLeft > 0) {
+        injectedStepsLeft -= 1;
+        if (injectedMode === "POINT") {
+          actualY = -0.88 + noise;
+        } else if (injectedMode === "CONTEXTUAL") {
+          actualY += 0.68 * Math.sin((2 * Math.PI * t) / 5.0);
+        }
+      }
+
+      let degOffset = 0.0;
+      if (degDriftRemaining > 0) {
+        const progress = (90 - degDriftRemaining) / 90.0;
+        degOffset = 0.06 + 0.21 * progress;
+        actualY += degOffset;
+        degDriftRemaining -= 1;
+      }
+
+      actualY = Math.max(-1.0, Math.min(1.0, actualY));
+      const rawErr = Math.abs(actualY - predictedY);
+      const prevEwma = ewmaBuffer.length > 0 ? ewmaBuffer[ewmaBuffer.length - 1] : 0.065;
+      const alpha = 2.0 / (22.0 + 1.0);
+      const newEwma = alpha * (rawErr * 0.92 + degOffset * 0.7) + (1.0 - alpha) * prevEwma;
+      const isAnom = newEwma > spec.epsilon;
+
+      telemetryBuffer.push(actualY);
+      forecastBuffer.push(predictedY);
+      ewmaBuffer.push(newEwma);
+      cmdPulseBuffer.push(cmdPulse);
+      anomFlagBuffer.push(isAnom || isScheduledAnom || injectedStepsLeft > 0);
+
+      if (telemetryBuffer.length > BUFFER_LEN) {
+        telemetryBuffer.shift();
+        forecastBuffer.shift();
+        ewmaBuffer.shift();
+        cmdPulseBuffer.shift();
+        anomFlagBuffer.shift();
+      }
+
+      if (shouldRender) {
+        updateKpiHeader(newEwma, spec);
+        drawOscilloscopes();
+      }
+    }
+
+    function updateKpiHeader(ewmaVal, spec) {
+      const ratio = ewmaVal / spec.epsilon;
+      const zScore = ((ewmaVal - 0.065) / 0.038).toFixed(1);
+
+      document.getElementById("kpiSpacecraftBadge").textContent = `${spec.spacecraft} • ${spec.id}`;
+      document.getElementById("kpiMissionClock").textContent = `Timestep t = ${missionStep} • 0.04 ms/win`;
+      document.getElementById("kpiEwmaVal").textContent = ewmaVal.toFixed(3);
+      document.getElementById("kpiEpsilonVal").textContent = `/ ε* = ${spec.epsilon.toFixed(3)}`;
+      document.getElementById("kpiExceedanceText").textContent = `Ratio: ${ratio.toFixed(2)}x (${zScore}σ vs nominal)`;
+
+      const healthEl = document.getElementById("kpiHealthState");
+      if (ewmaVal > spec.epsilon) {
+        healthEl.textContent = "ANOMALY DETECTED";
+        healthEl.className = "mt-1.5 text-base font-bold text-rose-400 sm:text-lg";
+      } else if (degDriftRemaining > 0 || ewmaVal > spec.epsilon * 0.68) {
+        healthEl.textContent = "DEGRADATION DRIFT";
+        healthEl.className = "mt-1.5 text-base font-bold text-amber-400 sm:text-lg";
+      } else {
+        healthEl.textContent = "NOMINAL ORBITAL";
+        healthEl.className = "mt-1.5 text-base font-bold text-emerald-400 sm:text-lg";
+      }
+
+      const degEl = document.getElementById("kpiDegradationStatus");
+      const degSub = document.getElementById("kpiDegradationSub");
+      if (degDriftRemaining > 0) {
+        degEl.textContent = "DRIFT INDICATOR (R²=0.90)";
+        degEl.className = "mt-1.5 text-base font-bold text-amber-400 sm:text-lg";
+        degSub.textContent = "Est. threshold intersection ~849 steps";
+      } else {
+        degEl.textContent = "STABLE (R²=0.04)";
+        degEl.className = "mt-1.5 text-base font-bold text-slate-200 sm:text-lg";
+        degSub.textContent = "No sustained monotonic residual drift";
+      }
+    }
+
+    // =========================================================================
+    // 3. DUAL HTML5 CANVAS OSCILLOSCOPE RENDERERS
+    // =========================================================================
+    function drawOscilloscopes() {
+      const c1 = document.getElementById("canvasTelemetry");
+      const c2 = document.getElementById("canvasError");
+      if (!c1 || !c2) return;
+
+      const dpr = window.devicePixelRatio || 1;
+      [c1, c2].forEach(c => {
+        const rect = c.getBoundingClientRect();
+        if (rect.width > 0 && rect.height > 0) {
+          c.width = rect.width * dpr;
+          c.height = rect.height * dpr;
+        }
+      });
+
+      const ctx1 = c1.getContext("2d");
+      const ctx2 = c2.getContext("2d");
+      ctx1.save();
+      ctx2.save();
+      ctx1.scale(dpr, dpr);
+      ctx2.scale(dpr, dpr);
+
+      const w1 = c1.width / dpr;
+      const h1 = c1.height / dpr;
+      const w2 = c2.width / dpr;
+      const h2 = c2.height / dpr;
+
+      // --- Draw Oscilloscope 1: Telemetry & Forecast ---
+      ctx1.clearRect(0, 0, w1, h1);
+      drawGrid(ctx1, w1, h1);
+
+      const n = telemetryBuffer.length;
+      if (n > 1) {
+        // Highlight anomalous intervals
+        ctx1.fillStyle = "rgba(244, 63, 94, 0.18)";
+        for (let i = 0; i < n; i++) {
+          if (anomFlagBuffer[i]) {
+            const x = (i / (BUFFER_LEN - 1)) * w1;
+            ctx1.fillRect(x, 0, (w1 / BUFFER_LEN) + 1, h1);
+          }
+        }
+
+        // Actual telemetry y_t
+        ctx1.beginPath();
+        ctx1.strokeStyle = "#94A3B8";
+        ctx1.lineWidth = 1.5;
+        for (let i = 0; i < n; i++) {
+          const x = (i / (BUFFER_LEN - 1)) * w1;
+          const y = h1 * 0.5 - (telemetryBuffer[i] * (h1 * 0.40));
+          if (i === 0) ctx1.moveTo(x, y);
+          else ctx1.lineTo(x, y);
+        }
+        ctx1.stroke();
+
+        // LSTM Forecast y_hat
+        ctx1.beginPath();
+        ctx1.strokeStyle = "#38BDF8";
+        ctx1.lineWidth = 1.8;
+        for (let i = 0; i < n; i++) {
+          const x = (i / (BUFFER_LEN - 1)) * w1;
+          const y = h1 * 0.5 - (forecastBuffer[i] * (h1 * 0.40));
+          if (i === 0) ctx1.moveTo(x, y);
+          else ctx1.lineTo(x, y);
+        }
+        ctx1.stroke();
+
+        // Command impulse ticks along bottom edge
+        ctx1.fillStyle = "#22D3EE";
+        for (let i = 0; i < n; i++) {
+          if (cmdPulseBuffer[i]) {
+            const x = (i / (BUFFER_LEN - 1)) * w1;
+            ctx1.fillRect(x - 1, h1 - 10, 2.5, 8);
+          }
+        }
+      }
+
+      // --- Draw Oscilloscope 2: EWMA Error & Dynamic Threshold ---
+      ctx2.clearRect(0, 0, w2, h2);
+      drawGrid(ctx2, w2, h2);
+
+      const spec = CHANNELS[activeChanId];
+      const maxErrScale = 0.65;
+
+      // Dynamic Threshold Line epsilon*
+      const epsY = h2 - (spec.epsilon / maxErrScale) * (h2 * 0.85) - 8;
+      ctx2.beginPath();
+      ctx2.setLineDash([6, 4]);
+      ctx2.strokeStyle = "#10B981";
+      ctx2.lineWidth = 1.8;
+      ctx2.moveTo(0, epsY);
+      ctx2.lineTo(w2, epsY);
+      ctx2.stroke();
+      ctx2.setLineDash([]);
+
+      // EWMA Error Curve e_s
+      if (n > 1) {
+        ctx2.beginPath();
+        ctx2.strokeStyle = "#A855F7";
+        ctx2.lineWidth = 2.2;
+        for (let i = 0; i < n; i++) {
+          const x = (i / (BUFFER_LEN - 1)) * w2;
+          const y = h2 - (Math.min(maxErrScale, ewmaBuffer[i]) / maxErrScale) * (h2 * 0.85) - 8;
+          if (i === 0) ctx2.moveTo(x, y);
+          else ctx2.lineTo(x, y);
+        }
+        ctx2.stroke();
+      }
+
+      ctx1.restore();
+      ctx2.restore();
+    }
+
+    function drawGrid(ctx, w, h) {
+      ctx.strokeStyle = "#1E293B";
+      ctx.lineWidth = 1;
+      for (let r = 1; r < 4; r++) {
+        const y = (h / 4) * r;
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(w, y);
+        ctx.stroke();
+      }
+      for (let c = 1; c < 6; c++) {
+        const x = (w / 6) * c;
+        ctx.beginPath();
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, h);
+        ctx.stroke();
+      }
+    }
+
+    // =========================================================================
+    // 4. UI RENDERERS (CHANNEL PILLS, XAI CARD, INCIDENTS, AI ASSISTANT, API)
+    // =========================================================================
+    function renderChannelButtons() {
+      const container = document.getElementById("channelButtonsContainer");
+      container.innerHTML = "";
+      Object.values(CHANNELS).forEach(ch => {
+        const isSelected = ch.id === activeChanId;
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = isSelected
+          ? "rounded-lg bg-sky-500/20 border border-sky-400 px-2.5 py-1 text-xs font-bold text-sky-300 transition"
+          : "rounded-lg border border-slate-700 bg-slate-800/80 hover:bg-slate-800 px-2.5 py-1 text-xs font-medium text-slate-300 transition";
+        btn.textContent = `${ch.id} (${ch.subsystem})`;
+        btn.addEventListener("click", () => {
+          activeChanId = ch.id;
+          renderChannelButtons();
+          renderXaiCard();
+          initStreamBuffers();
+          drawOscilloscopes();
+        });
+        container.appendChild(btn);
+      });
+    }
+
+    function renderXaiCard() {
+      const spec = CHANNELS[activeChanId];
+      const xai = spec.xai;
+      document.getElementById("xaiCategoryBadge").textContent = xai.category;
+      document.getElementById("xaiQ1").textContent = xai.q1;
+      document.getElementById("xaiQ2").textContent = xai.q2;
+      document.getElementById("xaiQ4").textContent = xai.q4;
+      document.getElementById("xaiCouplingBadge").textContent = spec.coupling;
+
+      const barsEl = document.getElementById("xaiQ3Bars");
+      barsEl.innerHTML = "";
+      xai.q3.forEach((item, idx) => {
+        const row = document.createElement("div");
+        const barCol = idx === 0 ? "bg-sky-400" : "bg-indigo-400";
+        row.innerHTML = `
+          <div class="flex justify-between text-[11px]">
+            <span class="mono text-slate-300">${item.name}</span>
+            <span class="mono font-semibold text-sky-300">${item.pct.toFixed(1)}%</span>
+          </div>
+          <div class="mt-0.5 h-1.5 w-full rounded-full bg-slate-800">
+            <div class="h-1.5 rounded-full ${barCol}" style="width: ${item.pct}%"></div>
+          </div>
+        `;
+        barsEl.appendChild(row);
+      });
+
+      const listEl = document.getElementById("xaiQ5List");
+      listEl.innerHTML = "";
+      xai.q5.forEach(stepText => {
+        const li = document.createElement("li");
+        li.textContent = stepText;
+        listEl.appendChild(li);
+      });
+    }
+
+    function renderIncidentTable() {
+      const tbody = document.getElementById("incidentTableBody");
+      tbody.innerHTML = "";
+      const filtered = INCIDENTS.filter(inc => {
+        if (activeIncidentFilter === "CRITICAL") return inc.severity === "CRITICAL";
+        if (activeIncidentFilter === "DEGRADATION") return inc.severity === "DEGRADATION";
+        return true;
+      });
+
+      filtered.forEach(inc => {
+        const tr = document.createElement("tr");
+        const sevBadge = inc.severity === "CRITICAL"
+          ? "bg-rose-500/20 text-rose-300 border-rose-500/40"
+          : inc.severity === "DEGRADATION"
+          ? "bg-amber-500/20 text-amber-300 border-amber-500/40"
+          : "bg-sky-500/20 text-sky-300 border-sky-500/40";
+
+        const statusColor = inc.status === "RESOLVED"
+          ? "text-emerald-400"
+          : inc.status === "ACKNOWLEDGED"
+          ? "text-amber-300"
+          : "text-rose-400 font-semibold";
+
+        tr.innerHTML = `
+          <td class="py-2.5 pr-2 font-semibold text-white">${inc.chan} <span class="text-[11px] font-normal text-slate-400">(${inc.spacecraft})</span></td>
+          <td class="mono py-2.5 px-2 text-slate-300">${inc.window}</td>
+          <td class="py-2.5 px-2 text-slate-200">${inc.pattern}</td>
+          <td class="py-2.5 px-2"><span class="rounded border px-1.5 py-0.5 text-[10px] font-semibold ${sevBadge}">${inc.severity}</span></td>
+          <td class="mono py-2.5 px-2 ${statusColor}">${inc.status}</td>
+          <td class="py-2.5 pl-2 text-right">
+            <button type="button" data-inc-id="${inc.id}" class="incActionBtn rounded border border-slate-700 bg-slate-800 hover:bg-slate-700 px-2 py-1 text-[11px] text-slate-200 transition">
+              ${inc.status === "OPEN" ? "Acknowledge" : inc.status === "ACKNOWLEDGED" ? "Resolve" : "Reopen"}
+            </button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+
+      tbody.querySelectorAll(".incActionBtn").forEach(btn => {
+        btn.addEventListener("click", () => {
+          const id = parseInt(btn.getAttribute("data-inc-id"), 10);
+          const item = INCIDENTS.find(x => x.id === id);
+          if (item) {
+            item.status = item.status === "OPEN" ? "ACKNOWLEDGED" : item.status === "ACKNOWLEDGED" ? "RESOLVED" : "OPEN";
+            renderIncidentTable();
+          }
+        });
+      });
+    }
+
+    function updateTunerDisplay(idx) {
+      const row = PMIN_SWEEP[idx];
+      const tag = row.p_min === 0.17 ? " (Optimal F0.5)" : row.p_min === 0.13 ? " (KDD Default)" : "";
+      document.getElementById("sliderPminLabel").textContent = `${row.p_min.toFixed(2)}${tag}`;
+      document.getElementById("tunerF05").textContent = row.F05.toFixed(4);
+      document.getElementById("tunerF1").textContent = row.F1.toFixed(4);
+      document.getElementById("tunerPrecRec").textContent = `${(row.Precision * 100).toFixed(1)}% / ${(row.Recall * 100).toFixed(1)}%`;
+      document.getElementById("tunerTpFp").textContent = `TP = ${row.TP} | FP = ${row.FP}`;
+
+      document.getElementById("kpiF05Val").textContent = row.F05.toFixed(4);
+      document.getElementById("kpiF1Val").textContent = `F1 = ${row.F1.toFixed(4)}`;
+      document.getElementById("kpiTpFpText").textContent = `Precision: ${(row.Precision * 100).toFixed(1)}% (TP=${row.TP}, FP=${row.FP})`;
+    }
+
+    function appendAssistantReply(question) {
+      const box = document.getElementById("assistantChatBox");
+      const qLower = question.toLowerCase();
+      let answer = "";
+      let meta = "";
+
+      if (qLower.includes("degrad") || qLower.includes("failure") || qLower.includes("wear")) {
+        meta = "PHASE 16 • PREDICTIVE DEGRADATION INTELLIGENCE";
+        answer = "On SMAP channel P-1 (window [5450, 7050]), EWMA residual drift exhibits a statistically significant monotonic slope of +0.111 per 1,000 steps (R² = 0.9017, variance expansion 14.26x). While current error (0.246) remains below the hard anomaly threshold (ε* = 0.340), linear extrapolation projects threshold intersection in ~849 steps. AstroGuard flags this strictly as an early equipment degradation indicator rather than a verified hardware failure.";
+      } else if (qLower.includes("coupl") || qLower.includes("depend") || qLower.includes("correl")) {
+        meta = "PHASE 18 • MULTIVARIATE CROSS-CHANNEL DEPENDENCY";
+        answer = "Cross-channel lagged correlation analysis across SMAP and Curiosity subsystems shows the strongest inter-subsystem couplings between D-1 ↔ S-1 (|r| = 0.8598, lag = 0 steps), R-1 ↔ D-1 (|r| = 0.8510), and T-1 ↔ D-1 (|r| = 0.8123). When investigating anomalies on P-1 or R-1, engineers should simultaneously inspect D-1 data commutator logs.";
+      } else if (qLower.includes("transfer") || qLower.includes("f0.5") || qLower.includes("cvpr")) {
+        meta = "PHASES 10 & 20 • F0.5 & CVPR 2021 TRANSFER LEARNING";
+        answer = "Following NASA JPL's KDD 2018 benchmark, AstroGuard optimizes F0.5 (weighting Precision 2x higher than Recall). Tightening p_min from 0.13 to 0.17 cuts false positives from 2 to 1 and raises fleet F0.5 to 0.9091. Using CVPR 2021 Transfer Learning (pre-training on P-1 and fine-tuning for 5 epochs on T-1, A-1, M-1, F-1) achieves a 9.37x training speedup while preserving F0.5 = 1.0000 on A-1, M-1, and F-1.";
+      } else {
+        const spec = CHANNELS[activeChanId];
+        meta = `PHASE 9 & 19 • ROOT-CAUSE EVIDENCE FOR ${spec.id}`;
+        answer = `${spec.xai.q1} (${spec.xai.q2}). ${spec.xai.q4}. Counterfactual perturbation shows ${spec.xai.q3[0].name} contributed ${spec.xai.q3[0].pct}%, followed by ${spec.xai.q3[1].name} (${spec.xai.q3[1].pct}%). Recommended next step: ${spec.xai.q5[0]}`;
+      }
+
+      const item = document.createElement("div");
+      item.className = "rounded-lg border border-slate-800 bg-slate-900/90 p-2.5 space-y-1";
+      item.innerHTML = `
+        <div class="text-[11px] font-semibold text-sky-400">Q: ${question}</div>
+        <div class="mono text-[10px] text-emerald-400">${meta}</div>
+        <p class="text-xs text-slate-200 leading-relaxed">${answer}</p>
+      `;
+      box.appendChild(item);
+      box.scrollTop = box.scrollHeight;
+    }
+
+    function renderApiTestPayload(isAnomalous) {
+      const spec = CHANNELS[activeChanId];
+      const payload = isAnomalous
+        ? {
+            endpoint: "POST /v1/telemetry/detect",
+            http_status: 200,
+            chan_id: spec.id,
+            spacecraft: spec.spacecraft,
+            is_anomaly: true,
+            severity: "CRITICAL_SUBSYSTEM_ANOMALY",
+            pattern_classification: spec.xai.category,
+            raw_horizon_mae: 0.4845,
+            ewma_smoothed_error: 0.4483,
+            dynamic_threshold_epsilon: spec.epsilon,
+            threshold_exceedance_ratio: +(0.4483 / spec.epsilon).toFixed(3),
+            residual_z_score: "7.1 sigma",
+            top_contributing_features: spec.xai.q3.slice(0, 2),
+            inference_latency_ms: 0.042
+          }
+        : {
+            endpoint: "POST /v1/telemetry/detect",
+            http_status: 200,
+            chan_id: spec.id,
+            spacecraft: spec.spacecraft,
+            is_anomaly: false,
+            severity: "NOMINAL_ORBITAL_OPERATION",
+            pattern_classification: "NOMINAL_STATIONARY",
+            raw_horizon_mae: 0.0449,
+            ewma_smoothed_error: 0.0650,
+            dynamic_threshold_epsilon: spec.epsilon,
+            threshold_exceedance_ratio: +(0.0650 / spec.epsilon).toFixed(3),
+            residual_z_score: "0.4 sigma",
+            inference_latency_ms: 0.032
+          };
+      document.getElementById("apiJsonOutput").textContent = JSON.stringify(payload, null, 2);
+    }
+
+    // =========================================================================
+    // 5. EVENT LISTENERS & INITIALIZATION
+    // =========================================================================
+    function startStreamLoop() {
+      if (timerHandle) clearInterval(timerHandle);
+      if (isPlaying) {
+        timerHandle = setInterval(() => stepSimulation(true), streamIntervalMs);
+      }
+    }
+
+    function switchTab(viewName) {
+      const views = {
+        stream: document.getElementById("viewStream"),
+        incidents: document.getElementById("viewIncidents"),
+        api: document.getElementById("viewApi")
+      };
+      const btns = {
+        stream: document.getElementById("tabBtnStream"),
+        incidents: document.getElementById("tabBtnIncidents"),
+        api: document.getElementById("tabBtnApi")
+      };
+
+      Object.keys(views).forEach(k => {
+        if (k === viewName) {
+          views[k].classList.remove("hidden");
+          btns[k].className = "rounded-lg bg-sky-500/20 border border-sky-500/50 px-3 py-1.5 text-xs font-semibold text-sky-300 transition";
+        } else {
+          views[k].classList.add("hidden");
+          btns[k].className = "rounded-lg border border-slate-700 bg-slate-800/70 px-3 py-1.5 text-xs font-medium text-slate-300 hover:bg-slate-800 transition";
+        }
+      });
+      if (viewName === "stream") {
+        setTimeout(drawOscilloscopes, 20);
+      }
+    }
+
+    window.addEventListener("load", () => {
+      renderChannelButtons();
+      renderXaiCard();
+      renderIncidentTable();
+      updateTunerDisplay(3);
+      initStreamBuffers();
+      drawOscilloscopes();
+      startStreamLoop();
+      appendAssistantReply("Why was spacecraft subsystem P-1 flagged as abnormal?");
+      renderApiTestPayload(true);
+
+      // Tab buttons
+      document.getElementById("tabBtnStream").addEventListener("click", () => switchTab("stream"));
+      document.getElementById("tabBtnIncidents").addEventListener("click", () => switchTab("incidents"));
+      document.getElementById("tabBtnApi").addEventListener("click", () => switchTab("api"));
+
+      // Stream controls
+      document.getElementById("btnPlayPause").addEventListener("click", () => {
+        isPlaying = !isPlaying;
+        document.getElementById("playPauseIcon").textContent = isPlaying ? "⏸" : "▶";
+        document.getElementById("playPauseText").textContent = isPlaying ? "Pause Stream" : "Resume Stream";
+        startStreamLoop();
+      });
+
+      document.getElementById("btnStep").addEventListener("click", () => {
+        if (isPlaying) {
+          isPlaying = false;
+          document.getElementById("playPauseIcon").textContent = "▶";
+          document.getElementById("playPauseText").textContent = "Resume Stream";
+          startStreamLoop();
+        }
+        stepSimulation(true);
+      });
+
+      document.getElementById("selectSpeed").addEventListener("change", (e) => {
+        streamIntervalMs = parseInt(e.target.value, 10);
+        startStreamLoop();
+      });
+
+      document.getElementById("btnInjectPoint").addEventListener("click", () => {
+        injectedMode = "POINT";
+        injectedStepsLeft = 28;
+        stepSimulation(true);
+      });
+
+      document.getElementById("btnInjectContextual").addEventListener("click", () => {
+        injectedMode = "CONTEXTUAL";
+        injectedStepsLeft = 36;
+        stepSimulation(true);
+      });
+
+      document.getElementById("btnInjectDegradation").addEventListener("click", () => {
+        degDriftRemaining = 90;
+        stepSimulation(true);
+      });
+
+      document.getElementById("btnResetStream").addEventListener("click", () => {
+        initStreamBuffers();
+        drawOscilloscopes();
+      });
+
+      // F0.5 Tuner slider
+      document.getElementById("sliderPmin").addEventListener("input", (e) => {
+        updateTunerDisplay(parseInt(e.target.value, 10));
+      });
+
+      // Incident filter buttons
+      document.getElementById("filterAll").addEventListener("click", () => {
+        activeIncidentFilter = "ALL";
+        renderIncidentTable();
+      });
+      document.getElementById("filterCritical").addEventListener("click", () => {
+        activeIncidentFilter = "CRITICAL";
+        renderIncidentTable();
+      });
+      document.getElementById("filterDegradation").addEventListener("click", () => {
+        activeIncidentFilter = "DEGRADATION";
+        renderIncidentTable();
+      });
+
+      // Assistant presets & form
+      document.querySelectorAll(".presetQueryBtn").forEach(btn => {
+        btn.addEventListener("click", () => {
+          appendAssistantReply(btn.getAttribute("data-query"));
+        });
+      });
+
+      document.getElementById("assistantForm").addEventListener("submit", (e) => {
+        e.preventDefault();
+        const input = document.getElementById("assistantInput");
+        const q = input.value.trim();
+        if (q) {
+          appendAssistantReply(q);
+          input.value = "";
+        }
+      });
+
+      // API Tester buttons
+      document.getElementById("btnTestNominalApi").addEventListener("click", () => renderApiTestPayload(false));
+      document.getElementById("btnTestAnomalyApi").addEventListener("click", () => renderApiTestPayload(true));
+
+      window.addEventListener("resize", drawOscilloscopes);
+    });
+  </script>
+</body>
+</html>

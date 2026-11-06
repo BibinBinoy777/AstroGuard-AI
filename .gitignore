@@ -1,0 +1,6 @@
+__pycache__/
+*.py[cod]
+*.npz
+*.pt
+.DS_Store
+.env
