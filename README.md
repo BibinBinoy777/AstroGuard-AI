@@ -4,6 +4,16 @@
 
 **AstroGuard AI** is a complete 5-stage, 27-phase spacecraft telemetry intelligence and anomaly investigation platform expanding [NASA JPL's Telemanom framework (Hundman et al., KDD 2018)](https://github.com/khundman/telemanom) across the [NASA SMAP Satellite & MSL Curiosity Rover Telemetry Dataset](https://www.kaggle.com/datasets/patrickfleith/nasa-anomaly-detection-dataset-smap-msl).
 
+
+📊 Dashboard & Visual Reports
+
+
+<img width="1835" height="876" alt="Screenshot (285)" src="https://github.com/user-attachments/assets/fbdbc8ab-8ac5-4084-b38e-cf2c1a70035a" />
+
+<img width="1846" height="889" alt="Screenshot (286)" src="https://github.com/user-attachments/assets/1d9158f7-b573-4509-99f0-adab54c544fb" />
+
+
+
 ## 1. Complete 5-Stage (27-Phase) Architecture & Benchmarks
 
 | Stage | Phases | Core Modules | Key Verified Engineering Outcome | 
